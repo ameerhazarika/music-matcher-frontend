@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkAuth]);
 
   const login = () => {
-    //  window.location.href = "http://127.0.0.1:5000/api/auth/login";
+    // window.location.href = "http://127.0.0.1:5000/api/auth/login";
     window.location.href =
       "https://music-matcher-backend.onrender.com/api/auth/login";
   };
