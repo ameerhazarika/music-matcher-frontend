@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Edit3, Music, Calendar, MapPin, Settings } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Edit3, Music, Calendar, MapPin, Settings } from "lucide-react";
 
 interface User {
   id: string;
@@ -22,12 +22,65 @@ interface ProfilePageProps {
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [bio, setBio] = useState('Music is my language 🎵');
-  const [location, setLocation] = useState('New York, NY');
+  const [bio, setBio] = useState("Music is my language 🎵");
+  const [location, setLocation] = useState("New York, NY");
+  const [topTracks, setTopTracks] = useState<any[]>([]);
+  const [loadingTracks, setLoadingTracks] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoadingTracks(true);
+      setError(null);
+      const token = localStorage.getItem("jwtToken");
+
+      if (!token) {
+        setError("No authentication token found");
+        return;
+      }
+
+      const response = await fetch(
+        "https://music-matcher-backend.onrender.com/api/user/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const userData = await response.json();
+        setTopTracks(userData.topTracks || []);
+
+        // Update user data if needed
+        if (userData.user) {
+          setUser({
+            ...user!,
+            ...userData.user,
+            topTracks: userData.topTracks || [],
+          });
+        }
+      } else if (response.status === 401) {
+        setError("Authentication expired. Please log in again.");
+      } else {
+        setError("Failed to load profile data");
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+      setError("Network error. Please try again.");
+    } finally {
+      setLoadingTracks(false);
+    }
+  };
 
   const getProfileImage = () => {
-    return user?.images && user.images[0] 
-      ? user.images[0].url 
+    return user?.images && user.images[0]
+      ? user.images[0].url
       : `https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg?auto=compress&cs=tinysrgb&w=500&h=500&fit=crop`;
   };
 
@@ -35,25 +88,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
     return track.album.images && track.album.images[0]
       ? track.album.images[0].url
       : `https://images.pexels.com/photos/167092/pexels-photo-167092.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop`;
-  };
-
-  const refreshSpotifyData = async () => {
-    try {
-      const token = localStorage.getItem('jwtToken');
-      const response = await fetch('http://127.0.0.1:8080/api/user/refresh-spotify', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const updatedUser = await response.json();
-        setUser(updatedUser);
-      }
-    } catch (error) {
-      console.error('Failed to refresh Spotify data:', error);
-    }
   };
 
   if (!user) return null;
@@ -72,7 +106,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             </div>
-            
+
             <div className="absolute -bottom-12 left-6">
               <img
                 src={getProfileImage()}
@@ -80,7 +114,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
                 className="w-24 h-24 rounded-full border-4 border-white/20 object-cover"
               />
             </div>
-            
+
             <button
               onClick={() => setIsEditing(!isEditing)}
               className="absolute top-4 right-4 bg-black/40 backdrop-blur-lg p-2 rounded-full text-white hover:bg-black/60 transition-all duration-200"
@@ -88,11 +122,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
               <Edit3 className="h-5 w-5" />
             </button>
           </div>
-          
+
           <div className="pt-16 p-6 text-white">
             <h1 className="text-2xl font-bold mb-1">{user.displayName}</h1>
             <p className="text-gray-300 mb-4">{user.email}</p>
-            
+
             {isEditing ? (
               <div className="space-y-4">
                 <div>
@@ -105,7 +139,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Location</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Location
+                  </label>
                   <input
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
@@ -134,7 +170,9 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
         {/* Music Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 text-center text-white">
-            <div className="text-2xl font-bold text-green-400">{user.topTracks?.length || 0}</div>
+            <div className="text-2xl font-bold text-green-400">
+              {topTracks.length}
+            </div>
             <div className="text-sm text-gray-300">Top Tracks</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-4 text-center text-white">
@@ -151,34 +189,68 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
               <h2 className="text-xl font-bold">Your Top Tracks</h2>
             </div>
             <button
-              onClick={refreshSpotifyData}
-              className="text-sm text-purple-400 hover:text-purple-300 transition-colors duration-200"
+              onClick={fetchUserProfile}
+              disabled={loadingTracks}
+              className="text-sm text-purple-400 hover:text-purple-300 transition-colors duration-200 disabled:opacity-50"
             >
-              Refresh
+              {loadingTracks ? "Loading..." : "Refresh"}
             </button>
           </div>
-          
-          <div className="space-y-4">
-            {user.topTracks?.slice(0, 10).map((track, index) => (
-              <div key={track.id} className="flex items-center space-x-4">
-                <div className="text-gray-400 font-mono text-sm w-6 text-center">
-                  {index + 1}
+
+          {error ? (
+            <div className="text-center py-8">
+              <div className="text-red-400 mb-4">{error}</div>
+              <button
+                onClick={fetchUserProfile}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : loadingTracks ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-400 mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading your top tracks...</p>
+            </div>
+          ) : topTracks.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <Music className="h-12 w-12 mx-auto mb-4 text-gray-500" />
+              <p>No top tracks found</p>
+              <p className="text-sm mt-2">
+                Make sure you have listening history on Spotify
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {topTracks.slice(0, 10).map((track, index) => (
+                <div
+                  key={track.id || index}
+                  className="flex items-center space-x-4"
+                >
+                  <div className="text-gray-400 font-mono text-sm w-6 text-center">
+                    {index + 1}
+                  </div>
+                  <img
+                    src={getTrackImage(track)}
+                    alt={track.album?.name || "Album cover"}
+                    className="w-14 h-14 rounded-lg object-cover"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-medium truncate">
+                      {track.name}
+                    </h3>
+                    <p className="text-gray-400 text-sm truncate">
+                      {track.artists?.map((a: any) => a.name).join(", ") ||
+                        "Unknown Artist"}
+                    </p>
+                    <p className="text-gray-500 text-xs truncate">
+                      {track.album?.name || "Unknown Album"}
+                    </p>
+                  </div>
                 </div>
-                <img
-                  src={getTrackImage(track)}
-                  alt={track.album.name}
-                  className="w-14 h-14 rounded-lg object-cover"
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-medium truncate">{track.name}</h3>
-                  <p className="text-gray-400 text-sm truncate">
-                    {track.artists.map(a => a.name).join(', ')}
-                  </p>
-                  <p className="text-gray-500 text-xs truncate">{track.album.name}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Settings */}
@@ -187,7 +259,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
             <Settings className="h-6 w-6 mr-2 text-gray-400" />
             <h2 className="text-xl font-bold">Settings</h2>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-white">Discovery Radius</span>
@@ -198,7 +270,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
                 <option>Global</option>
               </select>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-white">Age Range</span>
               <select className="bg-black/20 border border-white/20 rounded-lg px-3 py-2 text-white text-sm">
@@ -208,11 +280,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
                 <option>45+</option>
               </select>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-white">Show me on TuneMatch</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  defaultChecked
+                />
                 <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
               </label>
             </div>
