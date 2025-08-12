@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import SwipeCard from '../components/SwipeCard';
-import { Heart, X, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import SwipeCard from "../components/SwipeCard";
+import { Heart, X, RotateCcw } from "lucide-react";
 
 interface User {
   id: string;
@@ -36,7 +36,9 @@ interface MatchingPageProps {
 }
 
 const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
-  const [potentialMatches, setPotentialMatches] = useState<PotentialMatch[]>([]);
+  const [potentialMatches, setPotentialMatches] = useState<PotentialMatch[]>(
+    []
+  );
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isMatch, setIsMatch] = useState(false);
@@ -46,62 +48,78 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
   }, []);
 
   const fetchPotentialMatches = async () => {
+    if (!user) return;
+
     try {
       setLoading(true);
-      const token = localStorage.getItem('jwtToken');
-      const response = await fetch('http://127.0.0.1:8080/api/matches/potential', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const token = localStorage.getItem("jwtToken");
+      console.log(user.spotifyId);
+      const response = await fetch(
+        `https://music-matcher-backend.onrender.com/api/user/discover`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
-      
+      );
+
       if (response.ok) {
-        const matches = await response.json();
-        setPotentialMatches(matches);
+        const data = await response.json();
+        setPotentialMatches(data);
+        setCurrentMatchIndex(0); // Reset index when new data loads
+      } else {
+        console.error("Failed to fetch users:", await response.text());
       }
     } catch (error) {
-      console.error('Failed to fetch potential matches:', error);
+      console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSwipe = async (direction: 'left' | 'right') => {
-    if (currentMatchIndex >= potentialMatches.length) return;
+  const handleSwipe = async (direction: "left" | "right") => {
+    if (potentialMatches.length === 0) return;
 
     const currentMatch = potentialMatches[currentMatchIndex];
-    
+
     try {
-      const token = localStorage.getItem('jwtToken');
-      const response = await fetch('http://127.0.0.1:8080/api/matches/swipe', {
-        method: 'POST',
+      const token = localStorage.getItem("jwtToken");
+      const response = await fetch("http://127.0.0.1:5000/api/matches/swipe", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           targetUserId: currentMatch.id,
-          action: direction === 'right' ? 'like' : 'pass'
-        })
+          action: direction === "right" ? "like" : "pass",
+        }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        if (result.isMatch && direction === 'right') {
+        if (result.isMatch && direction === "right") {
           setIsMatch(true);
           setTimeout(() => setIsMatch(false), 3000);
         }
       }
     } catch (error) {
-      console.error('Swipe action failed:', error);
+      console.error("Swipe action failed:", error);
     }
 
-    setCurrentMatchIndex(prev => prev + 1);
+    // --- Recycling logic: reset index to 0 if we reach the end ---
+    setCurrentMatchIndex((prev) => {
+      const nextIndex = prev + 1;
+      if (nextIndex >= potentialMatches.length) {
+        return 0; // recycle back to first match
+      }
+      return nextIndex;
+    });
   };
 
   const handleUndo = () => {
     if (currentMatchIndex > 0) {
-      setCurrentMatchIndex(prev => prev - 1);
+      setCurrentMatchIndex((prev) => prev - 1);
     }
   };
 
@@ -132,13 +150,11 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
           </div>
         )}
 
-        {currentMatch ? (
+        {/* --- Render SwipeCard only if there are matches --- */}
+        {potentialMatches.length > 0 && currentMatch ? (
           <>
-            <SwipeCard 
-              match={currentMatch} 
-              onSwipe={handleSwipe}
-            />
-            
+            <SwipeCard match={currentMatch} onSwipe={handleSwipe} />
+
             {/* Action buttons */}
             <div className="flex justify-center items-center space-x-6 mt-8">
               <button
@@ -148,16 +164,16 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
               >
                 <RotateCcw className="h-6 w-6" />
               </button>
-              
+
               <button
-                onClick={() => handleSwipe('left')}
+                onClick={() => handleSwipe("left")}
                 className="bg-red-500/20 backdrop-blur-lg p-6 rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/30 transition-all duration-200 transform hover:scale-110"
               >
                 <X className="h-8 w-8" />
               </button>
-              
+
               <button
-                onClick={() => handleSwipe('right')}
+                onClick={() => handleSwipe("right")}
                 className="bg-green-500/20 backdrop-blur-lg p-6 rounded-full text-green-400 hover:text-green-300 hover:bg-green-500/30 transition-all duration-200 transform hover:scale-110"
               >
                 <Heart className="h-8 w-8" />
@@ -165,11 +181,12 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
             </div>
           </>
         ) : (
+          // Show this only if no matches at all (e.g., empty list)
           <div className="text-center text-white py-16">
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-              <h2 className="text-2xl font-bold mb-4">No More Matches</h2>
+              <h2 className="text-2xl font-bold mb-4">No Matches Available</h2>
               <p className="text-gray-300 mb-6">
-                You've seen all potential matches for now. Check back later for new people!
+                Check back later for new people!
               </p>
               <button
                 onClick={fetchPotentialMatches}

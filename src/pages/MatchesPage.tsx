@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { MessageCircle, Music, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { MessageCircle, Music, Calendar } from "lucide-react";
 
 interface User {
   id: string;
@@ -31,7 +31,7 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
     fetchMatches();
@@ -40,41 +40,46 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
   const fetchMatches = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('jwtToken');
-      const response = await fetch('http://127.0.0.1:8080/api/matches', {
+      const token = localStorage.getItem("jwtToken");
+      const response = await fetch("http://127.0.0.1:8080/api/matches", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+
       if (response.ok) {
         const matchData = await response.json();
         setMatches(matchData);
       }
     } catch (error) {
-      console.error('Failed to fetch matches:', error);
+      console.error("Failed to fetch matches:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const getProfileImage = (userImages: Array<{ url: string }>) => {
-    return userImages && userImages[0] 
-      ? userImages[0].url 
+    return userImages && userImages[0]
+      ? userImages[0].url
       : `https://images.pexels.com/photos/1704488/pexels-photo-1704488.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&fit=crop`;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
+    const diffInHours =
+      Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
     if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffInHours < 168) { // 7 days
-      return date.toLocaleDateString([], { weekday: 'short' });
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } else if (diffInHours < 168) {
+      // 7 days
+      return date.toLocaleDateString([], { weekday: "short" });
     } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString([], { month: "short", day: "numeric" });
     }
   };
 
@@ -101,13 +106,15 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
                 Matches ({matches.length})
               </h1>
             </div>
-            
+
             <div className="overflow-y-auto h-full">
               {matches.length === 0 ? (
                 <div className="p-6 text-center text-gray-300">
                   <Music className="h-16 w-16 mx-auto mb-4 text-gray-500" />
                   <h3 className="text-lg font-semibold mb-2">No matches yet</h3>
-                  <p className="text-sm">Start swiping to find your music soulmates!</p>
+                  <p className="text-sm">
+                    Start swiping to find your music soulmates!
+                  </p>
                 </div>
               ) : (
                 <div className="p-4 space-y-2">
@@ -116,9 +123,9 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
                       key={match.id}
                       onClick={() => setSelectedMatch(match)}
                       className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
-                        selectedMatch?.id === match.id 
-                          ? 'bg-purple-500/20 border border-purple-400/30' 
-                          : 'hover:bg-white/5'
+                        selectedMatch?.id === match.id
+                          ? "bg-purple-500/20 border border-purple-400/30"
+                          : "hover:bg-white/5"
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -142,7 +149,9 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
                           )}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {formatDate(match.lastMessage?.sentAt || match.matchedAt)}
+                          {formatDate(
+                            match.lastMessage?.sentAt || match.matchedAt
+                          )}
                         </div>
                       </div>
                     </div>
@@ -164,7 +173,9 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
                     className="w-10 h-10 rounded-full object-cover mr-3"
                   />
                   <div>
-                    <h2 className="text-white font-semibold">{selectedMatch.user.displayName}</h2>
+                    <h2 className="text-white font-semibold">
+                      {selectedMatch.user.displayName}
+                    </h2>
                     <p className="text-sm text-purple-400">
                       {selectedMatch.commonArtists.length} common artists
                     </p>
@@ -183,14 +194,16 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
                       Matched on {formatDate(selectedMatch.matchedAt)}
                     </p>
                     <div className="flex flex-wrap justify-center gap-2 mt-3">
-                      {selectedMatch.commonArtists.slice(0, 3).map((artist, index) => (
-                        <span
-                          key={index}
-                          className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-xs"
-                        >
-                          {artist}
-                        </span>
-                      ))}
+                      {selectedMatch.commonArtists
+                        .slice(0, 3)
+                        .map((artist, index) => (
+                          <span
+                            key={index}
+                            className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-xs"
+                          >
+                            {artist}
+                          </span>
+                        ))}
                     </div>
                   </div>
 
@@ -198,9 +211,12 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
                   <div className="space-y-4">
                     <div className="bg-white/10 rounded-2xl rounded-bl-md p-4 max-w-xs">
                       <p className="text-white text-sm">
-                        Hey! I see we both love indie rock 🎸 What's your favorite album right now?
+                        Hey! I see we both love indie rock 🎸 What's your
+                        favorite album right now?
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">Suggested starter</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Suggested starter
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -224,8 +240,12 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
               <div className="flex items-center justify-center h-full text-center text-gray-400">
                 <div>
                   <MessageCircle className="h-16 w-16 mx-auto mb-4 text-gray-500" />
-                  <h3 className="text-lg font-semibold mb-2">Select a match to start chatting</h3>
-                  <p className="text-sm">Choose a conversation from the left to begin</p>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Select a match to start chatting
+                  </h3>
+                  <p className="text-sm">
+                    Choose a conversation from the left to begin
+                  </p>
                 </div>
               </div>
             )}

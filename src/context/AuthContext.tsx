@@ -1,3 +1,4 @@
+// src/context/AuthContext.tsx
 import React, {
   createContext,
   useContext,
@@ -47,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (displayName && email) {
           const userData: User = {
-            id: "temp-id",
+            id: "temp-id", // ideally replace with real user data from backend or JWT
             spotifyId: "temp-spotify-id",
             displayName,
             email,
@@ -80,9 +81,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkAuth]);
 
   const login = () => {
-    // window.location.href = "http://127.0.0.1:5000/api/auth/login";
     window.location.href =
       "https://music-matcher-backend.onrender.com/api/auth/login";
+    // or your deployed backend url
   };
 
   const logout = () => {
@@ -108,6 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Hook to consume the AuthContext state and methods
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

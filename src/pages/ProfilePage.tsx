@@ -52,6 +52,12 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
           },
         }
       );
+      // const response = await fetch("http://localhost:5000/api/user/profile", {
+      //   headers: {
+      //     Authorization: `Bearer ${token}`,
+      //     "Content-Type": "application/json",
+      //   },
+      // });
 
       if (response.ok) {
         const userData = await response.json();
