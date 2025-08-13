@@ -56,12 +56,12 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
       console.log(user.spotifyId);
       const response = await fetch(
         `https://music-matcher-backend.onrender.com/api/user/discover`,
-
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-          credentials: "include", // Ensure cookies are sent with the request
+          // Remove credentials: "include"
         }
       );
 
