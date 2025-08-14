@@ -82,8 +82,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = () => {
     window.location.href =
-      "https://music-matcher-backend.onrender.com/api/auth/login";
+      "https://music-matcher-be.onrender.com/api/auth/login";
     // or your deployed backend url
+    //   window.location.href = "http://localhost:5000/api/auth/login";
+    // // or your deployed backend url
   };
 
   const logout = () => {

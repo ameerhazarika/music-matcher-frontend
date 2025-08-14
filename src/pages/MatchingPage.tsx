@@ -55,7 +55,7 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
       const token = localStorage.getItem("jwtToken");
       console.log(user.spotifyId);
       const response = await fetch(
-        `https://music-matcher-backend.onrender.com/api/user/discover`,
+        `https://music-matcher-be.onrender.com/api/user/discover`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -87,7 +87,7 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
     try {
       const token = localStorage.getItem("jwtToken");
       const response = await fetch(
-        "https://music-matcher-backend.onrender.com/api/matches/swipe",
+        "https://music-matcher-be.onrender.com/api/matches/swipe",
         {
           method: "POST",
           headers: {
