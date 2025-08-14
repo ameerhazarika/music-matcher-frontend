@@ -44,7 +44,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ user, setUser }) => {
       }
 
       const response = await fetch(
-        "https://music-matcher-backend.onrender.com/api/user/profile",
+        "https://music-matcher-backend.onrender.com/api/user/profiles",
         {
           headers: {
             Authorization: `Bearer ${token}`,
