@@ -86,17 +86,20 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
 
     try {
       const token = localStorage.getItem("jwtToken");
-      const response = await fetch("http://127.0.0.1:5000/api/matches/swipe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          targetUserId: currentMatch.id,
-          action: direction === "right" ? "like" : "pass",
-        }),
-      });
+      const response = await fetch(
+        "https://music-matcher-backend.onrender.com/api/matches/swipe",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            targetUserId: currentMatch.id,
+            action: direction === "right" ? "like" : "pass",
+          }),
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
