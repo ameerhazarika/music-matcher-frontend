@@ -38,18 +38,45 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
   }, []);
 
   const fetchMatches = async () => {
+    if (!user) return;
+
     try {
       setLoading(true);
       const token = localStorage.getItem("jwtToken");
-      const response = await fetch("http://127.0.0.1:8080/api/matches", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "https://music-matcher-be.onrender.com/api/matching/matches",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const matchData = await response.json();
-        setMatches(matchData);
+
+        // Map backend matches to frontend shape
+        const formattedMatches = matchData.map((m: any) => {
+          // Determine which user is the matched user
+          const otherUser = m.user1.id === user.id ? m.user2 : m.user1;
+
+          return {
+            id: m.id,
+            user: {
+              id: otherUser.id,
+              displayName: otherUser.displayName, // TODO: replace with actual displayName if you fetch user info
+              images: otherUser.profileImage ? [otherUser.profileImage] : [], // TODO: fetch user images if needed
+            },
+            matchedAt: m.matchedAt,
+            lastMessage: null, // optional: integrate messaging later
+            commonArtists: [], // optional: fill if your backend provides
+          };
+        });
+
+        setMatches(formattedMatches);
+        setSelectedMatch(null);
+      } else {
+        console.error("Failed to fetch matches:", await response.text());
       }
     } catch (error) {
       console.error("Failed to fetch matches:", error);

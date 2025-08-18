@@ -18,6 +18,7 @@ interface User {
 
 interface PotentialMatch {
   id: string;
+  spotifyId: string;
   displayName: string;
   images: Array<{ url: string }>;
   topTracks: Array<{
@@ -41,7 +42,7 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
   );
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isMatch, setIsMatch] = useState(false);
+  const [matchedUser, setMatchedUser] = useState<PotentialMatch | null>(null);
 
   useEffect(() => {
     fetchPotentialMatches();
@@ -53,7 +54,6 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("jwtToken");
-      console.log(user.spotifyId);
       const response = await fetch(
         `https://music-matcher-be.onrender.com/api/user/discover`,
         {
@@ -61,14 +61,13 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          // Remove credentials: "include"
         }
       );
 
       if (response.ok) {
         const data = await response.json();
         setPotentialMatches(data);
-        setCurrentMatchIndex(0); // Reset index when new data loads
+        setCurrentMatchIndex(0);
       } else {
         console.error("Failed to fetch users:", await response.text());
       }
@@ -87,7 +86,7 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
     try {
       const token = localStorage.getItem("jwtToken");
       const response = await fetch(
-        "https://music-matcher-be.onrender.com/api/matches/swipe",
+        "https://music-matcher-be.onrender.com/api/matching/swipe",
         {
           method: "POST",
           headers: {
@@ -95,8 +94,8 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            targetUserId: currentMatch.id,
-            action: direction === "right" ? "like" : "pass",
+            targetUserId: currentMatch.spotifyId,
+            like: direction === "right",
           }),
         }
       );
@@ -104,20 +103,19 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
       if (response.ok) {
         const result = await response.json();
         if (result.isMatch && direction === "right") {
-          setIsMatch(true);
-          setTimeout(() => setIsMatch(false), 3000);
+          // show match popup for this user
+          setMatchedUser(currentMatch);
+          setTimeout(() => setMatchedUser(null), 10000); // hide after 10 seconds
         }
       }
     } catch (error) {
       console.error("Swipe action failed:", error);
     }
 
-    // --- Recycling logic: reset index to 0 if we reach the end ---
+    // Move to next match
     setCurrentMatchIndex((prev) => {
       const nextIndex = prev + 1;
-      if (nextIndex >= potentialMatches.length) {
-        return 0; // recycle back to first match
-      }
+      if (nextIndex >= potentialMatches.length) return 0;
       return nextIndex;
     });
   };
@@ -144,18 +142,20 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
   return (
     <div className="min-h-screen pt-20 pb-8 px-4">
       <div className="max-w-md mx-auto">
-        {/* Match notification */}
-        {isMatch && (
+        {/* Match popup */}
+        {matchedUser && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-gradient-to-r from-pink-500 to-purple-500 p-8 rounded-2xl text-center text-white transform animate-pulse">
               <Heart className="h-16 w-16 mx-auto mb-4 fill-current" />
-              <h2 className="text-2xl font-bold mb-2">It's a Match! 🎵</h2>
+              <h2 className="text-2xl font-bold mb-2">
+                It's a Match with {matchedUser.displayName}! 🎵
+              </h2>
               <p>You both love the same music!</p>
             </div>
           </div>
         )}
 
-        {/* --- Render SwipeCard only if there are matches --- */}
+        {/* Swipe cards */}
         {potentialMatches.length > 0 && currentMatch ? (
           <>
             <SwipeCard match={currentMatch} onSwipe={handleSwipe} />
@@ -186,7 +186,6 @@ const MatchingPage: React.FC<MatchingPageProps> = ({ user }) => {
             </div>
           </>
         ) : (
-          // Show this only if no matches at all (e.g., empty list)
           <div className="text-center text-white py-16">
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
               <h2 className="text-2xl font-bold mb-4">No Matches Available</h2>
