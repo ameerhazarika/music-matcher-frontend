@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { MessageCircle, Music, Calendar } from "lucide-react";
+import { MessageCircle, Music } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   id: string;
@@ -33,6 +34,8 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [newMessage, setNewMessage] = useState("");
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchMatches();
   }, []);
@@ -55,21 +58,18 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
       if (response.ok) {
         const matchData = await response.json();
 
-        // Map backend matches to frontend shape
         const formattedMatches = matchData.map((m: any) => {
-          // Determine which user is the matched user
           const otherUser = m.user1.id === user.id ? m.user2 : m.user1;
-
           return {
             id: m.id,
             user: {
               id: otherUser.id,
-              displayName: otherUser.displayName, // TODO: replace with actual displayName if you fetch user info
-              images: otherUser.profileImage ? [otherUser.profileImage] : [], // TODO: fetch user images if needed
+              displayName: otherUser.displayName,
+              images: otherUser.profileImage ? [otherUser.profileImage] : [],
             },
             matchedAt: m.matchedAt,
-            lastMessage: null, // optional: integrate messaging later
-            commonArtists: [], // optional: fill if your backend provides
+            lastMessage: null,
+            commonArtists: [],
           };
         });
 
@@ -103,7 +103,6 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
         minute: "2-digit",
       });
     } else if (diffInHours < 168) {
-      // 7 days
       return date.toLocaleDateString([], { weekday: "short" });
     } else {
       return date.toLocaleDateString([], { month: "short", day: "numeric" });
@@ -148,7 +147,15 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
                   {matches.map((match) => (
                     <div
                       key={match.id}
-                      onClick={() => setSelectedMatch(match)}
+                      onClick={() => {
+                        if (window.innerWidth < 768) {
+                          // Mobile: navigate to full-page chat
+                          navigate(`/chat/${match.id}`, { state: { match } });
+                        } else {
+                          // Desktop: open in sidebar
+                          setSelectedMatch(match);
+                        }
+                      }}
                       className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                         selectedMatch?.id === match.id
                           ? "bg-purple-500/20 border border-purple-400/30"
@@ -188,7 +195,7 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
             </div>
           </div>
 
-          {/* Chat Area */}
+          {/* Desktop Chat Area */}
           <div className="hidden md:flex md:w-2/3 bg-white/5 backdrop-blur-lg rounded-r-2xl border border-white/20 border-l-0 flex-col">
             {selectedMatch ? (
               <>
@@ -211,7 +218,6 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
 
                 {/* Chat Messages */}
                 <div className="flex-1 p-6 overflow-y-auto">
-                  {/* Match notification */}
                   <div className="text-center mb-6">
                     <div className="bg-gradient-to-r from-purple-500 to-pink-500 inline-block p-3 rounded-full mb-2">
                       <Music className="h-6 w-6 text-white" />
@@ -234,7 +240,6 @@ const MatchesPage: React.FC<MatchesPageProps> = ({ user }) => {
                     </div>
                   </div>
 
-                  {/* Sample starter messages */}
                   <div className="space-y-4">
                     <div className="bg-white/10 rounded-2xl rounded-bl-md p-4 max-w-xs">
                       <p className="text-white text-sm">

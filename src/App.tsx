@@ -11,6 +11,7 @@ import ProfilePage from "./pages/ProfilePage";
 import MatchesPage from "./pages/MatchesPage";
 import Navigation from "./components/Navigation";
 import AuthCallback from "./components/AuthCallback";
+import MatchChatPage from "./pages/MatchChatPage";
 import { useAuth } from "./context/AuthContext";
 
 function App() {
@@ -71,6 +72,7 @@ function App() {
               )
             }
           />
+          <Route path="/chat/:matchId" element={<MatchChatPage />} />
         </Routes>
       </div>
     </Router>
