@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const checkAuth = useCallback(() => {
+  const checkAuth = useCallback(async () => {
     try {
       const token = localStorage.getItem("jwtToken");
       if (token) {
@@ -47,9 +47,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const email = localStorage.getItem("userEmail");
 
         if (displayName && email) {
+          const response = await fetch(
+            "https://music-matcher-be.onrender.com/api/user/me",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          if (!response.ok) {
+            throw new Error("Failed to fetch user data");
+          }
+          const userDetails = await response.json();
           const userData: User = {
-            id: "temp-id", // ideally replace with real user data from backend or JWT
-            spotifyId: "temp-spotify-id",
+            id: userDetails.id, // ideally replace with real user data from backend or JWT
+            spotifyId: userDetails.spotifyId,
             displayName,
             email,
             images: [],
@@ -81,10 +91,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkAuth]);
 
   const login = () => {
-    window.location.href =
-      "https://music-matcher-be.onrender.com/api/auth/login";
-    // or your deployed backend url
-    //   window.location.href = "http://localhost:5000/api/auth/login";
+    // window.location.href =
+    "https://music-matcher-be.onrender.com/api/auth/login";
+    //or your deployed backend url
+    // window.location.href = "http://localhost:5000/api/auth/login";
     // // or your deployed backend url
   };
 
