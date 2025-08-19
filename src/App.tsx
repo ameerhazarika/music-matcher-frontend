@@ -72,7 +72,10 @@ function App() {
               )
             }
           />
-          <Route path="/chat/:matchId" element={<MatchChatPage />} />
+          <Route
+            path="/chat/:matchId"
+            element={<MatchChatPage user={user} />}
+          />
         </Routes>
       </div>
     </Router>
